@@ -11,6 +11,7 @@ import java.io.PrintStream;
 
 public class MailboxServer implements IMailboxServer, Runnable {
 
+    private final String componentId;
     private final Config config;
     private final Shell shell;
 
@@ -26,6 +27,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
      * @param out         the output stream to write console output to
      */
     public MailboxServer(String componentId, Config config, InputStream in, PrintStream out) {
+        this.componentId = componentId;
         this.config = config;
         this.shell = new Shell(in, out);
 
@@ -42,7 +44,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
         dmtpListenerThread = new DMTPListenerThread(config, shell);
         dmtpListenerThread.start();
 
-        dmapListenerThread = new DMAPListenerThread(config, shell);
+        dmapListenerThread = new DMAPListenerThread(componentId, config, shell);
         dmapListenerThread.start();
 
         shell.run();

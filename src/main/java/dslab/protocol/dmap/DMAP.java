@@ -6,19 +6,30 @@ import dslab.mailbox.MessageStorageSingleton;
 import dslab.mailbox.UserStorageSingleton;
 import dslab.protocol.dmap.exception.DMAPErrorException;
 import dslab.protocol.dmap.exception.DMAPTerminateConnectionException;
+import dslab.util.Config;
 
 import java.util.List;
 
 public class DMAP {
+
+    private final String componentId;
     private DMAPStates state = DMAPStates.loggedOut;
+    private boolean isSecure = false;
     private String loggedInUser;
+
+    public DMAP(String componentId) {
+        this.componentId = componentId;
+    }
 
     public String processInput(String input) throws DMAPErrorException {
         String output;
 
         if (input == null) {
-            if (state == DMAPStates.loggedOut) output = "ok DMAP";
+            if (state == DMAPStates.loggedOut) output = "ok DMAP2.0";
             else throw new DMAPErrorException("error protocol error");
+        } else if (input.startsWith("startsecure")) {
+            this.isSecure = true;
+            output = String.format("ok %s", componentId);
         } else if (input.startsWith("login")) {
             if (state == DMAPStates.loggedOut) {
                 String[] parts = input.split(" ");
