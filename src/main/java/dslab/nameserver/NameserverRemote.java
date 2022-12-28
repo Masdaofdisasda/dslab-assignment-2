@@ -4,7 +4,9 @@ import dslab.entity.MailboxEntry;
 import dslab.entity.NameserverEntry;
 
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NameserverRemote implements INameserverRemote {
@@ -24,15 +26,14 @@ public class NameserverRemote implements INameserverRemote {
         String[] domainParts = domain.split("\\.");
 
         if (domainParts.length == 1) {
-            String name = domainParts[0];
-            if (nameservers.containsKey(name)) {
-                throw new AlreadyRegisteredException("Domain " + name + " already registered in nameserver!");
+            if (nameservers.containsKey(domain)) {
+                throw new AlreadyRegisteredException("Nameserver " + domain + " already registered in nameserver!");
             }
 
-            NameserverEntry newEntry = new NameserverEntry(name, nameserver);
-            nameservers.put(name, newEntry);
+            NameserverEntry newEntry = new NameserverEntry(domain, nameserver);
+            nameservers.put(domain, newEntry);
 
-            System.out.println("Domain " + name + " registered!");
+            System.out.println("Nameserver " + domain + " registered!");
 
         } else if (domainParts.length > 1) {
 
@@ -45,15 +46,41 @@ public class NameserverRemote implements INameserverRemote {
             }
 
             nameservers.get(top).getRemote().registerNameserver(remaining, nameserver);
-            System.out.println("Passed along registration of " + remaining  + " to nameserver " + top);
+            System.out.println("Passed along nameserver registration of " + remaining  + " to nameserver " + top);
 
         } else throw new InvalidDomainException("Error, domain " + domain + " is invalid!");
-
     }
 
     @Override
     public void registerMailboxServer(String domain, String address) throws RemoteException, AlreadyRegisteredException, InvalidDomainException {
+        System.out.println("Registering mailserver with domain " + domain + " and address " + address);
 
+        String[] domainParts = domain.split("\\.");
+
+        if (domainParts.length == 1) {
+            if (addresses.containsKey(domain)) {
+                throw new AlreadyRegisteredException("Mailserver " + domain + " already registered in nameserver!");
+            }
+
+            MailboxEntry newEntry = new MailboxEntry(domain, address);
+            addresses.put(domain, newEntry);
+
+            System.out.println("Mailserver " + domain + " registered!");
+
+        } else if (domainParts.length > 1) {
+
+            String top = domainParts[domainParts.length - 1];
+            String[] remainingParts = Arrays.copyOf(domainParts, domainParts.length - 1);
+            String remaining = String.join(".", remainingParts);
+
+            if (!nameservers.containsKey(top)){
+                throw new InvalidDomainException("No nameserver for domain " + top + " is registered! Cannot register " + domain + "!");
+            }
+
+            nameservers.get(top).getRemote().registerMailboxServer(remaining, address);
+            System.out.println("Passed along mailserver registration of " + remaining  + " to nameserver " + top);
+
+        } else throw new InvalidDomainException("Error, domain " + domain + " is invalid!");
     }
 
     @Override
@@ -66,5 +93,13 @@ public class NameserverRemote implements INameserverRemote {
         System.out.println("Called lookup method");
         return username + " test";
         //return null;
+    }
+
+    public List<MailboxEntry> getAddressesList() {
+        return new ArrayList<>(addresses.values());
+    }
+
+    public List<NameserverEntry> getNameserversList() {
+        return new ArrayList<>(nameservers.values());
     }
 }

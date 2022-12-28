@@ -9,11 +9,15 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Collections;
+import java.util.List;
 
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
+import dslab.entity.MailboxEntry;
+import dslab.entity.NameserverEntry;
 import dslab.util.Config;
 
 public class Nameserver implements INameserver {
@@ -22,7 +26,7 @@ public class Nameserver implements INameserver {
     private final Shell shell;
     private Registry registry;
 
-    private INameserverRemote nameserverRemote;
+    private NameserverRemote nameserverRemote;
     private INameserverRemote stub;
 
 
@@ -93,15 +97,28 @@ public class Nameserver implements INameserver {
     @Override
     @Command
     public void nameservers() {
-        System.out.println("printing nameservers");
-        // TODO
+        List<NameserverEntry> nameservers = nameserverRemote.getNameserversList();
+        // sort alphabetically
+        Collections.sort(nameservers, (n1, n2) -> n1.getZone().compareToIgnoreCase(n2.getZone()));
+
+        int count = 1;
+        for (NameserverEntry nameserverEntry: nameservers) {
+            System.out.println(count++ + ". " + nameserverEntry.getZone());
+        }
     }
 
     @Override
     @Command
     public void addresses() {
-        System.out.println("printing addresses");
-        // TODO
+        List<MailboxEntry> addresses = nameserverRemote.getAddressesList();
+
+        // sort alphabetically by domain
+        Collections.sort(addresses, (a1, a2) -> a1.getAddress().compareToIgnoreCase(a2.getAddress()));
+
+        int count = 1;
+        for (MailboxEntry entry : addresses) {
+            System.out.println(count++ + ". " + entry.getAddress());
+        }
     }
 
     @Override
