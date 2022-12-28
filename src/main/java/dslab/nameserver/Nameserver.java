@@ -117,7 +117,7 @@ public class Nameserver implements INameserver {
 
         int count = 1;
         for (MailboxEntry entry : addresses) {
-            System.out.println(count++ + ". " + entry.getAddress());
+            System.out.println(count++ + ". " + entry.getDomain() + " " + entry.getAddress());
         }
     }
 
