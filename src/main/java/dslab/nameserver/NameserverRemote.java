@@ -23,8 +23,10 @@ public class NameserverRemote implements INameserverRemote {
     public void registerNameserver(String domain, INameserverRemote nameserver) throws RemoteException, AlreadyRegisteredException, InvalidDomainException {
         System.out.println("Registering nameserver with domain " + domain);
 
+        // split domain into its zones; earth.planet -> ["earth", "planet"]
         String[] domainParts = domain.split("\\.");
 
+        // only one zone in domain -> nameserver needs to be saved here as "child"
         if (domainParts.length == 1) {
             if (nameservers.containsKey(domain)) {
                 throw new AlreadyRegisteredException("Nameserver " + domain + " already registered in nameserver!");
@@ -36,17 +38,18 @@ public class NameserverRemote implements INameserverRemote {
             System.out.println("Nameserver " + domain + " registered!");
 
         } else if (domainParts.length > 1) {
+            // more than one zone left -> pass registration further down
 
             String top = domainParts[domainParts.length - 1];
             String[] remainingParts = Arrays.copyOf(domainParts, domainParts.length - 1);
-            String remaining = String.join(".", remainingParts);
+            String remainingDomain = String.join(".", remainingParts);
 
-            if (!nameservers.containsKey(top)){
+            if (!nameservers.containsKey(top)) {
                 throw new InvalidDomainException("No nameserver for domain " + top + " is registered! Cannot register " + domain + "!");
             }
 
-            nameservers.get(top).getRemote().registerNameserver(remaining, nameserver);
-            System.out.println("Passed along nameserver registration of " + remaining  + " to nameserver " + top);
+            nameservers.get(top).getRemote().registerNameserver(remainingDomain, nameserver);
+            System.out.println("Passed along nameserver registration of " + remainingDomain + " to nameserver " + top);
 
         } else throw new InvalidDomainException("Error, domain " + domain + " is invalid!");
     }
@@ -73,26 +76,26 @@ public class NameserverRemote implements INameserverRemote {
             String[] remainingParts = Arrays.copyOf(domainParts, domainParts.length - 1);
             String remaining = String.join(".", remainingParts);
 
-            if (!nameservers.containsKey(top)){
+            if (!nameservers.containsKey(top)) {
                 throw new InvalidDomainException("No nameserver for domain " + top + " is registered! Cannot register " + domain + "!");
             }
 
             nameservers.get(top).getRemote().registerMailboxServer(remaining, address);
-            System.out.println("Passed along mailserver registration of " + remaining  + " to nameserver " + top);
+            System.out.println("Passed along mailserver registration of " + remaining + " to nameserver " + top);
 
         } else throw new InvalidDomainException("Error, domain " + domain + " is invalid!");
     }
 
     @Override
     public INameserverRemote getNameserver(String zone) throws RemoteException {
-        return null;
+        if (nameservers.containsKey(zone)) return nameservers.get(zone).getRemote();
+        else throw new RemoteException("Nameserver for zone " + zone + " not found!");
     }
 
     @Override
-    public String lookup(String username) throws RemoteException {
-        System.out.println("Called lookup method");
-        return username + " test";
-        //return null;
+    public String lookup(String domain) throws RemoteException {
+        if (addresses.containsKey(domain)) return addresses.get(domain).getAddress();
+        else throw new RemoteException("No address for domain " + domain + " found!");
     }
 
     public List<MailboxEntry> getAddressesList() {

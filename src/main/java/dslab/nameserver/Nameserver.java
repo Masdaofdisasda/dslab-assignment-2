@@ -9,7 +9,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Collections;
 import java.util.List;
 
 import at.ac.tuwien.dsg.orvell.Shell;
@@ -27,7 +26,6 @@ public class Nameserver implements INameserver {
     private Registry registry;
 
     private NameserverRemote nameserverRemote;
-    private INameserverRemote stub;
 
 
     /**
@@ -52,7 +50,8 @@ public class Nameserver implements INameserver {
         try {
             nameserverRemote = new NameserverRemote();
 
-            stub = (INameserverRemote) UnicastRemoteObject.exportObject(nameserverRemote, 0);
+            // export own remote object
+            INameserverRemote stub = (INameserverRemote) UnicastRemoteObject.exportObject(nameserverRemote, 0);
             System.out.println("Remote Object epxorted!");
 
             if (config.containsKey("domain")) {
@@ -63,8 +62,10 @@ public class Nameserver implements INameserver {
                 );
 
                 try {
+                    // get the remote of root nameserver and register there with own remote object
                     INameserverRemote rootNameserverRemote = (INameserverRemote) registry.lookup(config.getString("root_id"));
                     rootNameserverRemote.registerNameserver(config.getString("domain"), nameserverRemote);
+
                     System.out.println("Nameserver registered at parent/root nameserver");
                 } catch (NotBoundException e) {
                     throw new RuntimeException("Error while looking up remote object of root ns!" + e);
@@ -99,7 +100,7 @@ public class Nameserver implements INameserver {
     public void nameservers() {
         List<NameserverEntry> nameservers = nameserverRemote.getNameserversList();
         // sort alphabetically
-        Collections.sort(nameservers, (n1, n2) -> n1.getZone().compareToIgnoreCase(n2.getZone()));
+        nameservers.sort((n1, n2) -> n1.getZone().compareToIgnoreCase(n2.getZone()));
 
         int count = 1;
         for (NameserverEntry nameserverEntry: nameservers) {
@@ -113,7 +114,7 @@ public class Nameserver implements INameserver {
         List<MailboxEntry> addresses = nameserverRemote.getAddressesList();
 
         // sort alphabetically by domain
-        Collections.sort(addresses, (a1, a2) -> a1.getAddress().compareToIgnoreCase(a2.getAddress()));
+        addresses.sort((a1, a2) -> a1.getDomain().compareToIgnoreCase(a2.getDomain()));
 
         int count = 1;
         for (MailboxEntry entry : addresses) {

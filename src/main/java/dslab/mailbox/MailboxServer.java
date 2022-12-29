@@ -49,7 +49,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
             Registry registry = LocateRegistry.getRegistry("127.0.0.1",13159);
             INameserverRemote rootNameserver = (INameserverRemote) registry.lookup("root-nameserver");
 
-            String address = InetAddress.getLocalHost().getHostAddress() + ':' + config.getInt("dmap.tcp.port");
+            String address = InetAddress.getLocalHost().getHostAddress() + ':' + config.getInt("dmtp.tcp.port");
             rootNameserver.registerMailboxServer(config.getString("domain"), address);
 
             System.out.println("Successfully registered in DNS!");

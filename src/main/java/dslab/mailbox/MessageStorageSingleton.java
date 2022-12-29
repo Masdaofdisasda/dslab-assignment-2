@@ -37,6 +37,8 @@ public class MessageStorageSingleton {
                 .setData(message.getData());
 
         messages.get(user).put(id, clone);
+
+        System.out.println("Message for user " + user + " stored!");
     }
 
     public List<Message> listMessages(String user) {
