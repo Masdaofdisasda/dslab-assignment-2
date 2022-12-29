@@ -40,7 +40,12 @@ public class TransferServer implements ITransferServer, Runnable {
     @Override
     public void run() {
         // init DNS
-        DNSSingleton.getInstance().parseDomainsFromFile();
+        // this needs to be done on server startup, otherwise DNSSingleton will not have its properties set
+        DNSSingleton.getInstance().setup(
+                config.getString("registry.host"),
+                config.getInt("registry.port"),
+                config.getString("root_id")
+        );
 
         // init Monitoring
         String localHost = "";
