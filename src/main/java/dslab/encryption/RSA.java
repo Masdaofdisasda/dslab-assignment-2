@@ -10,6 +10,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
@@ -56,20 +57,24 @@ public class RSA {
             throw new RuntimeException("Could not read the key file", e);
         }
 
-        // Initialize the key instance
-        X509EncodedKeySpec ks = new X509EncodedKeySpec(key);
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
-            if (mode == RSAMode.CLIENT_ENCRYPT_PUBLIC_KEY) {
-                this.key = kf.generatePublic(ks);
-            } else {
-                this.key = kf.generatePrivate(ks);
-            }
+            this.cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 
-            this.cipher = Cipher.getInstance("RSA/CBC/PKCS5Padding");
-            this.cipher.init(Cipher.ENCRYPT_MODE, this.key);
+            if (mode == RSAMode.CLIENT_ENCRYPT_PUBLIC_KEY) {
+                // Initialize the key instance
+                X509EncodedKeySpec ks = new X509EncodedKeySpec(key);
+                this.key = kf.generatePublic(ks);
+                this.cipher.init(Cipher.ENCRYPT_MODE, this.key);
+            } else {
+                // Initialize the key instance
+                PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(key);
+                this.key = kf.generatePrivate(ks);
+                this.cipher.init(Cipher.DECRYPT_MODE, this.key);
+            }
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
+             throw new RuntimeException(e);
         }
     }
 
@@ -87,8 +92,10 @@ public class RSA {
         }
 
         try {
+            System.out.println("Decrypting data with private key");
             return this.cipher.doFinal(data);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             throw new RuntimeException(e);
         }
     }
