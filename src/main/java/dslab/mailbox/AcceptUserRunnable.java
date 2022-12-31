@@ -43,7 +43,8 @@ public class AcceptUserRunnable implements Runnable {
                 try {
                     String output = protocol.processInput(input);
 
-                    socket.write(output);
+                    // Only write to client when output is not null
+                    if (output != null) socket.write(output);
 
                 } catch (DMAPErrorException e) {
                     socket.write(e.getMessage());
