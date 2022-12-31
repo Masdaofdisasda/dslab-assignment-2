@@ -11,6 +11,7 @@ public class Message {
     private String sender;
     private String subject;
     private String data;
+    private String hash;
 
     public void testMessageReadyForSend() throws DMTPErrorException {
         if (sender == null) throw new DMTPErrorException("error no sender");
@@ -63,6 +64,15 @@ public class Message {
 
     public Message setData(String data) {
         this.data = data;
+        return this;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public Message setHash(String hash) {
+        this.hash = hash;
         return this;
     }
 

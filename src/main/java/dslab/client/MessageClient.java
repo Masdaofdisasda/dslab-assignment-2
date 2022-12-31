@@ -1,6 +1,7 @@
 package dslab.client;
 
 import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.entity.Domain;
@@ -11,6 +12,7 @@ import dslab.protocol.dmtp.DMTPClient;
 import dslab.protocol.dmtp.exception.DMTPClientException;
 import dslab.protocol.dmtp.exception.DMTPErrorException;
 import dslab.util.Config;
+import dslab.util.MessageHasher;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +30,7 @@ public class MessageClient implements IMessageClient, Runnable {
   private final Shell shell;
   private DMAPClient client;
   private final Domain transferDomain;
+  private final MessageHasher hasher;
 
   /**
    * Creates a new client instance.
@@ -41,10 +44,10 @@ public class MessageClient implements IMessageClient, Runnable {
     this.config = config;
     this.shell = new Shell(in, out);
 
-
     String host = config.getString("transfer.host");
     int port = config.getInt("transfer.port");
     transferDomain = new Domain("Transfer Server", host, port);
+    hasher = new MessageHasher();
 
     shell.register(this);
     shell.setPrompt(componentId + "> ");
@@ -122,8 +125,10 @@ public class MessageClient implements IMessageClient, Runnable {
 
   @Override
   @Command
-  public void verify(String id) {
-    //TODO
+  public void verify(String messageId) {
+    // TODO
+    //String message = client.show(messageId);
+    //hasher.verify(message);
   }
 
   @Override
@@ -176,7 +181,13 @@ public class MessageClient implements IMessageClient, Runnable {
   @Override
   @Command
   public void shutdown() {
-    client.quit();
+    try {
+      client.logout();
+      client.quit();
+    } catch (IOException e) {
+      //
+    }
+    throw new StopShellException();
   }
 
   public static void main(String[] args) throws Exception {
