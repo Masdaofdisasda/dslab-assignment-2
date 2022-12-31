@@ -23,7 +23,6 @@ public class DMAP {
     private final String componentId;
     private DMAPStates state = DMAPStates.LOGGED_OUT;
     public static final char NUL_TERMINATOR = '\u0000';
-    private DMAPStates state = DMAPStates.loggedOut;
     private String loggedInUser;
     private AES aes;
     private boolean isSecure = false;
