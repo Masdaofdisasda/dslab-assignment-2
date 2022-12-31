@@ -20,9 +20,9 @@ import java.rmi.registry.Registry;
 
 public class MailboxServer implements IMailboxServer, Runnable {
 
-    private final String componentId;
     private final Config config;
     private final Shell shell;
+    private final String componentId;
 
     private DMTPListenerThread dmtpListenerThread;
     private DMAPListenerThread dmapListenerThread;
@@ -36,7 +36,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
      * @param out         the output stream to write console output to
      */
     public MailboxServer(String componentId, Config config, InputStream in, PrintStream out) {
-        this.componentId = componentId;
+        this.componentId =  componentId;
         this.config = config;
         this.shell = new Shell(in, out);
 
@@ -48,7 +48,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
     public void run() {
         // register at root nameserver
         try {
-            Registry registry = LocateRegistry.getRegistry("127.0.0.1",13159);
+            Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
             INameserverRemote rootNameserver = (INameserverRemote) registry.lookup("root-nameserver");
 
             String address = InetAddress.getLocalHost().getHostAddress() + ':' + config.getInt("dmtp.tcp.port");
