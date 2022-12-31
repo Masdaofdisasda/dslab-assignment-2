@@ -9,7 +9,7 @@ public class Base64Util {
     private Base64Util() {
     }
 
-    private static Base64Util getInstance() {
+    public static Base64Util getInstance() {
         return INSTANCE;
     }
 
