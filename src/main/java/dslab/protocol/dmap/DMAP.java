@@ -22,7 +22,6 @@ public class DMAP {
 
     private final String componentId;
     private DMAPStates state = DMAPStates.LOGGED_OUT;
-    public static final char NUL_TERMINATOR = '\u0000';
     private String loggedInUser;
     private AES aes;
     private boolean isSecure = false;
@@ -107,7 +106,7 @@ public class DMAP {
                     for (Message m : messages) {
                         list.append(m.getId()).append(" ").append(m.getSender()).append(" ").append(m.getSubject()).append("\n");
                     }
-                    output = list.toString() + NUL_TERMINATOR;
+                    output = list.toString();
                     System.out.println(output);
                 } else output = "You have no stored messages!";
 
@@ -135,7 +134,7 @@ public class DMAP {
                         .append("subject ").append(message.getSubject()).append("\n")
                         .append("data ").append(message.getData());
 
-                output = messageString.toString() + '\n' + NUL_TERMINATOR;
+                output = messageString.toString();
 
             } catch (MessageNotFoundException e) {
                 throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error unknown message id".getBytes())) : "error unknown message id");
