@@ -67,7 +67,8 @@ public class DMAPClient {
         String login = String.format("login %s %s", username, password);
         // Encrypt the login string and transmit to server
         socket.write(Base64Util.getInstance().encode(aes.encrypt(login.getBytes())));
-        if (!Objects.equals(socket.read(), "ok")) {
+        response = new String(aes.decrypt(Base64Util.getInstance().decode(socket.read())));
+        if (!response.equals("ok")) {
             throw new DMAPErrorException("Could not login");
         }
 
@@ -75,9 +76,12 @@ public class DMAPClient {
     }
 
     public List<String> list() throws IOException {
-        socket.write("list");
+        // Send the list (encrypted) command
+        socket.write(Base64Util.getInstance().encode(aes.encrypt("list".getBytes())));
         List<String> messages = new ArrayList<>();
         String response = socket.read();
+        // Decrypt the response
+        response = new String(aes.decrypt(Base64Util.getInstance().decode(response)));
 
         if (response.equals("You have no stored messages!")) {
             messages.add(response);
