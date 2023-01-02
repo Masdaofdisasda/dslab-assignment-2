@@ -19,8 +19,7 @@ public class DMTPClient {
 
     // send a DMTP message to next Transfer or Mailbox Server
     public void sendMessage() throws DMTPClientException, IOException {
-        System.out.println("Trying to open socket to mailbox server at");
-        System.out.println(recipientDomain);
+
         WrappedSocket socket = new WrappedSocket(new Socket(recipientDomain.getHost(), recipientDomain.getPort()));
 
         String in;
@@ -48,6 +47,9 @@ public class DMTPClient {
                     state = DMTPClientStates.data;
                 } else if (state == DMTPClientStates.data) {
                     out = "data " + message.getData();
+                    state = DMTPClientStates.hash;
+                } else if (state == DMTPClientStates.hash) {
+                    out = "hash " + message.getHash();
                     state = DMTPClientStates.send;
                 } else if (state == DMTPClientStates.send) {
                     out = "send";
@@ -73,6 +75,7 @@ enum DMTPClientStates {
     to,
     subject,
     data,
+    hash,
     send,
     sent,
     quit

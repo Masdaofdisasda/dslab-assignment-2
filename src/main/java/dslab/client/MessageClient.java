@@ -24,13 +24,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Client program for user to interact with the email system.
+ */
 public class MessageClient implements IMessageClient, Runnable {
 
   private final Config config;
   private final Shell shell;
   private DMAPClient client;
   private final Domain transferDomain;
-  private final MessageHasher hasher;
+  private final MessageHasher hasher = new MessageHasher();
 
   /**
    * Creates a new client instance.
@@ -47,7 +50,6 @@ public class MessageClient implements IMessageClient, Runnable {
     String host = config.getString("transfer.host");
     int port = config.getInt("transfer.port");
     transferDomain = new Domain("Transfer Server", host, port);
-    hasher = new MessageHasher();
 
     shell.register(this);
     shell.setPrompt(componentId + "> ");
@@ -126,6 +128,8 @@ public class MessageClient implements IMessageClient, Runnable {
     msg.setSubject(lines[2].substring(8));
     // data ...
     msg.setData(lines[3].substring(5));
+    // hash ...
+    if (lines.length == 5) msg.setHash(lines[4].substring(5));
 
     return msg;
   }
@@ -151,11 +155,30 @@ public class MessageClient implements IMessageClient, Runnable {
   @Override
   @Command
   public void verify(String messageId) {
-    // TODO
-    //String message = client.show(messageId);
-    //hasher.verify(message);
+    try {
+      String message = client.show(messageId);
+      Message msg = extractMessage(message);
+      if (msg.getHash() != null) {
+        shell.out().println(
+            hasher.verify(msg)
+            ? "ok"
+            : "error");
+
+      } else {
+        shell.out().println("error sender did not specify a hash");
+      }
+    } catch (IOException e) {
+      shell.err().println(e.getMessage());
+    }
   }
 
+  /**
+   * Sends a message to someone
+   *
+   * @param to      comma separated list of recipients
+   * @param subject the message subject
+   * @param data    the message data
+   */
   @Override
   @Command
   public void msg(String to, String subject, String data) {
@@ -165,10 +188,10 @@ public class MessageClient implements IMessageClient, Runnable {
     message.setRecipients(extractRecipients(to));
     message.setData(extractData(data));
     message.setSubject(extractSubject(subject));
+    message.setHash(hasher.encodeHash(hasher.calculateHash(message)));
 
     DMTPClient dmtpClient = new DMTPClient(message, transferDomain);
     try {
-      shell.out().println("sending message: " + message);
       dmtpClient.sendMessage();
       shell.out().println("ok");
     } catch (DMTPClientException | ConnectException e) {
@@ -177,6 +200,18 @@ public class MessageClient implements IMessageClient, Runnable {
       //
     }
 
+  }
+
+  @Override
+  @Command
+  public void shutdown() {
+    try {
+      client.logout();
+      client.quit();
+    } catch (IOException e) {
+      //
+    }
+    throw new StopShellException();
   }
 
   private String extractSubject(String subject) {
@@ -201,18 +236,6 @@ public class MessageClient implements IMessageClient, Runnable {
     return Arrays.stream(splitString)
         .sequential()
         .map(String::trim).collect(Collectors.toCollection(ArrayList::new));
-  }
-
-  @Override
-  @Command
-  public void shutdown() {
-    try {
-      client.logout();
-      client.quit();
-    } catch (IOException e) {
-      //
-    }
-    throw new StopShellException();
   }
 
   public static void main(String[] args) throws Exception {

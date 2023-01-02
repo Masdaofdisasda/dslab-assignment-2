@@ -133,6 +133,10 @@ public class DMAP {
                         .append("subject ").append(message.getSubject()).append("\n")
                         .append("data ").append(message.getData()).append("\n");
 
+                if (message.getHash() != null) {
+                    messageString.append("hash ").append(message.getHash()).append("\n");
+                }
+
                 output = messageString + "ok";
 
             } catch (MessageNotFoundException e) {

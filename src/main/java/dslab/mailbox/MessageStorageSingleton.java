@@ -29,12 +29,8 @@ public class MessageStorageSingleton {
         String id = randomId();
 
         // clone message so each user has its own in storage
-        Message clone = new Message();
-        clone.setId(id)
-                .setSender(message.getSender())
-                .setRecipients(message.getRecipients())
-                .setSubject(message.getSubject())
-                .setData(message.getData());
+        Message clone = new Message(message);
+        clone.setId(id);
 
         messages.get(user).put(id, clone);
 

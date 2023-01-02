@@ -19,7 +19,7 @@ public class DMTP {
     }
 
     public String processInput(String input) throws DMTPException {
-        String output;
+        String output = "";
 
         if (state == DMTPStates.waiting && input == null) {
             output = "ok DMTP";
@@ -104,6 +104,18 @@ public class DMTP {
                     output = "ok";
 
                 } else throw new DMTPErrorException("error no data");
+
+            } else throw new DMTPErrorException("error protocol error");
+
+        }  else if (input.startsWith("hash")) {
+            if (state == DMTPStates.receiving) {
+                if (input.length() <= 5) throw new DMTPErrorException("error no hash");
+
+                String data = input.substring(5);
+                if (data.trim().length() > 0) {
+                    message.setHash(data);
+                    output = "ok";
+                } else throw new DMTPErrorException("error empty hash");
 
             } else throw new DMTPErrorException("error protocol error");
 

@@ -17,10 +17,28 @@ public class Message {
         if (sender == null) throw new DMTPErrorException("error no sender");
         else if (subject == null) throw new DMTPErrorException("error no subject");
         else if (data == null) throw new DMTPErrorException("error no data");
-        else if (recipients == null || recipients.size() == 0) throw new DMTPErrorException("error no recipients");
+        else if (recipients == null || recipients.isEmpty()) throw new DMTPErrorException("error no recipients");
     }
 
     public Message() {}
+
+    public Message(String id, ArrayList<String> recipients, String sender, String subject, String data, String hash) {
+        this.id = id;
+        this.recipients = recipients;
+        this.sender = sender;
+        this.subject = subject;
+        this.data = data;
+        this.hash = hash;
+    }
+
+    /**
+     * Clone constructor for making copies of a message
+     *
+     * @param that message to copy
+     */
+    public Message(Message that) {
+        this(that.id, that.recipients, that.sender, that.subject, that.data, that.hash);
+    }
 
     public String getId() {
         return id;
