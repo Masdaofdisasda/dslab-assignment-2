@@ -24,9 +24,6 @@ public class DMAPClient {
     // Used for the AES encryption / decryption
     private AES aes;
 
-    // Used for the RSA encryption
-    private RSA rsa;
-
     public DMAPClient(String domain, int port) throws IOException {
         socket = new WrappedSocket(new Socket(domain, port));
         if (!Objects.equals(socket.read(), "ok DMAP2.0")) {
@@ -46,6 +43,8 @@ public class DMAPClient {
         String componentId = input.split(" ")[1];
         RSA rsa = new RSA(componentId, RSAMode.CLIENT_ENCRYPT_PUBLIC_KEY);
         String encryptedChallenge = Base64Util.getInstance().encode(rsa.encrypt(this.clientChallenge.getChallengeStringAsBase64().getBytes()));
+        // Discard rsa object since we don't need it anymore
+        rsa = null;
         // Create the AES encryption and decryption objects
         this.aes = new AES(this.clientChallenge.getSecret(), this.clientChallenge.getIv());
         // Write to the server the encrypted challenge (RSA)
@@ -121,8 +120,13 @@ public class DMAPClient {
     }
 
     public void logout() throws IOException {
-        socket.write("logout");
-        if (!Objects.equals(socket.read(), "ok")) {
+        socket.write(Base64Util.getInstance().encode(aes.encrypt("logout".getBytes())));
+        // Read the response from the server
+        String response = socket.read();
+        // Decrypt the response
+        response = new String(aes.decrypt(Base64Util.getInstance().decode(response)));
+
+        if (!response.equals("ok")) {
             throw new DMAPErrorException("Could not logout");
         }
     }
