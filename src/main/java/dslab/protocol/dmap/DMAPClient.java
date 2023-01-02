@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static dslab.protocol.dmap.DMAP.NUL_TERMINATOR;
-
 public class DMAPClient {
 
     private final WrappedSocket socket;
@@ -78,35 +76,32 @@ public class DMAPClient {
     public List<String> list() throws IOException {
         // Send the list (encrypted) command
         socket.write(Base64Util.getInstance().encode(aes.encrypt("list".getBytes())));
-        List<String> messages = new ArrayList<>();
         String response = socket.read();
         // Decrypt the response
         response = new String(aes.decrypt(Base64Util.getInstance().decode(response)));
 
-        if (response.equals("You have no stored messages!")) {
-            messages.add(response);
-            return messages;
+        // Split the response into multiple messages
+        List<String> messages = new ArrayList<>(List.of(response.split("\n")));
+
+        if (messages.size() == 1 && messages.get(0).equals("ok")) {
+            return List.of("You have no messages.");
         }
 
-        while (response.charAt(0) != NUL_TERMINATOR) { // prevents read() from blocking indefinitely
-            messages.add(response);
-            response = socket.read();
-        }
+        // If there is at least one message, remove the "ok" termination message
+        messages.remove("ok");
 
         return messages;
     }
 
     public String show(String messageId) throws IOException {
-        socket.write("show " + messageId);
-        StringBuilder message = new StringBuilder();
+        String command = String.format("show %s", messageId);
+        socket.write(Base64Util.getInstance().encode(aes.encrypt(command.getBytes())));
         String response = socket.read();
+        // Decrypt the response
+        response = new String(aes.decrypt(Base64Util.getInstance().decode(response)));
 
-        while (response.charAt(0) != NUL_TERMINATOR) { // prevents read() from blocking indefinitely
-            message.append(response).append('\n');
-            response = socket.read();
-        }
-
-        return message.toString();
+        // Return the message without the "ok" termination message
+        return response.split("\nok")[0];
     }
 
     public void delete(String messageId) throws IOException {

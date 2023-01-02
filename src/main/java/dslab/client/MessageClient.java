@@ -70,16 +70,24 @@ public class MessageClient implements IMessageClient, Runnable {
   @Command
   public void inbox() {
     try {
+      // Obtain overview list of messages from DMAP Client
       List<String> messageList = client.list();
-      if (messageList.size() == 1 && Objects.equals(messageList.get(0), "You have no stored messages!")) {
+
+      // Check if client has no messages
+      if (messageList.size() == 1 && Objects.equals(messageList.get(0), "You have no messages.")) {
         shell.out().println(messageList.get(0));
         return;
       }
 
+      messageList.forEach(System.out::println);
+
+      // Process messages
+      // Extract message ids from overview list
       List<String> messageIds = messageList.stream()
           .map(message -> message.substring(0, message.indexOf(" ")))
           .collect(Collectors.toList());
 
+      // Get message details (show) from DMAP Client
       List<Message> messages = messageIds.stream().map(messageId -> {
         Message message = new Message();
         try {
@@ -102,9 +110,15 @@ public class MessageClient implements IMessageClient, Runnable {
   private static Message extractMessage(String message) {
     String[] lines = message.split("\n");
     Message msg = new Message();
+
+    // Extract message details
+    // from ...
     msg.setSender(lines[0].substring(5));
+    // to ...
     msg.setRecipients(new ArrayList<>(List.of((lines[1].substring(3)))));
+    // subject ...
     msg.setSubject(lines[2].substring(8));
+    // data ...
     msg.setData(lines[3].substring(5));
 
     return msg;
