@@ -105,8 +105,17 @@ public class DMAPClient {
     }
 
     public void delete(String messageId) throws IOException {
-        socket.write("delete " + messageId);
-        if (!Objects.equals(socket.read(), "ok")) {
+        String command = String.format("delete %s", messageId);
+        // Send the delete command (encrypted)
+        socket.write(Base64Util.getInstance().encode(aes.encrypt(command.getBytes())));
+
+        // Read the response from the server
+        String response = socket.read();
+        // Decrypt the response
+        response = new String(aes.decrypt(Base64Util.getInstance().decode(response)));
+
+        // Check if the response is "ok" and throw an exception if not
+        if (!response.equals("ok")) {
             throw new DMAPErrorException("An error occurred when deleting message " + messageId);
         }
     }
