@@ -106,9 +106,9 @@ public class DMAP {
                     for (Message m : messages) {
                         list.append(m.getId()).append(" ").append(m.getSender()).append(" ").append(m.getSubject()).append("\n");
                     }
-                    output = list.toString();
+                    output = list + "ok";
                     System.out.println(output);
-                } else output = "You have no stored messages!";
+                } else output = "ok";
 
             } else {
                 throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error not logged in".getBytes())) : "error not logged in");
@@ -132,9 +132,9 @@ public class DMAP {
 
                 messageString
                         .append("subject ").append(message.getSubject()).append("\n")
-                        .append("data ").append(message.getData());
+                        .append("data ").append(message.getData()).append("\n");
 
-                output = messageString.toString();
+                output = messageString + "ok";
 
             } catch (MessageNotFoundException e) {
                 throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error unknown message id".getBytes())) : "error unknown message id");
@@ -162,7 +162,8 @@ public class DMAP {
                 state = DMAPStates.LOGGED_OUT;
                 loggedInUser = null;
                 output = "ok";
-            } else throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error not logged in".getBytes())) : "error not logged in");
+            } else
+                throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error not logged in".getBytes())) : "error not logged in");
 
         } else if (input.equals("quit")) {
             // no need for cleanup here, since this object will get garbage collected now anyway
