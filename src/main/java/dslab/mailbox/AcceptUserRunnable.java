@@ -3,6 +3,7 @@ package dslab.mailbox;
 import dslab.protocol.dmap.DMAP;
 import dslab.protocol.dmap.exception.DMAPErrorException;
 import dslab.protocol.dmap.exception.DMAPTerminateConnectionException;
+import dslab.util.Config;
 import dslab.util.WrappedSocket;
 
 import java.io.IOException;
@@ -11,13 +12,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class AcceptUserRunnable implements Runnable {
+
+    private final String componentId;
+    private final Config config;
     private final WrappedSocket socket;
-    private final ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAccepUserTasks;
+    private final ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAcceptUserTasks;
 
 
-    public AcceptUserRunnable(Socket socket, ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAccepUserTasks) throws IOException {
+    public AcceptUserRunnable(String componentId, Config config, Socket socket, ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAcceptUserTasks) throws IOException {
+        this.componentId = componentId;
+        this.config = config;
         this.socket = new WrappedSocket(socket);
-        this.runningAccepUserTasks = runningAccepUserTasks;
+        this.runningAcceptUserTasks = runningAcceptUserTasks;
     }
 
     @Override
@@ -27,7 +33,7 @@ public class AcceptUserRunnable implements Runnable {
 
         // init dmtp and print first message
         // validate that recipient mail ends with domain name of this server and that user exists in server
-        DMAP protocol = new DMAP();
+        DMAP protocol = new DMAP(componentId);
 
         socket.write(protocol.processInput(null));
 
@@ -37,7 +43,8 @@ public class AcceptUserRunnable implements Runnable {
                 try {
                     String output = protocol.processInput(input);
 
-                    socket.write(output);
+                    // Only write to client when output is not null
+                    if (output != null) socket.write(output);
 
                 } catch (DMAPErrorException e) {
                     socket.write(e.getMessage());
@@ -54,7 +61,7 @@ public class AcceptUserRunnable implements Runnable {
 
     public void close() {
         System.out.println("Closing AcceptUserRunnable thread!");
-        runningAccepUserTasks.remove(this);
+        runningAcceptUserTasks.remove(this);
 
         socket.close();
     }

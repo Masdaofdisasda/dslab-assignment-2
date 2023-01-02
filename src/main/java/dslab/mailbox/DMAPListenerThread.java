@@ -14,22 +14,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DMAPListenerThread extends Thread {
 
+    private final String componentId;
     private final Config config;
     private final Shell shell;
-    private ServerSocket serverSocket;
     private final AtomicBoolean stopFlag;
-
     private final ExecutorService acceptUserThreadPool;
-    private final ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAccepUserTasks;
+    private final ConcurrentHashMap<AcceptUserRunnable, AcceptUserRunnable> runningAcceptUserTasks;
+    private ServerSocket serverSocket;
 
-
-    public DMAPListenerThread(Config config, Shell shell) {
+    public DMAPListenerThread(String componentId, Config config, Shell shell) {
+        this.componentId = componentId;
         this.config = config;
         this.shell = shell;
         this.stopFlag = new AtomicBoolean(false);
 
         this.acceptUserThreadPool = Executors.newCachedThreadPool();
-        this.runningAccepUserTasks = new ConcurrentHashMap<>();
+        this.runningAcceptUserTasks = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -46,7 +46,7 @@ public class DMAPListenerThread extends Thread {
                 try {
                     clientSocket = serverSocket.accept();
 
-                    AcceptUserRunnable worker = new AcceptUserRunnable(clientSocket, runningAccepUserTasks);
+                    AcceptUserRunnable worker = new AcceptUserRunnable(componentId, config, clientSocket, runningAcceptUserTasks);
                     acceptUserThreadPool.submit(worker);
 
                 } catch (SocketException e) {
