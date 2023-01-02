@@ -20,10 +20,19 @@ import java.util.List;
  */
 public class DMAP {
 
+    // Holds the component id of the server (used for obtaining the public key of the server for RSA encryption)
     private final String componentId;
+
+    // Tracks the state of the DMAP protocol connection
     private DMAPStates state = DMAPStates.LOGGED_OUT;
+
+    // Stores the current logged-in user
     private String loggedInUser;
+
+    // Is used for encryption / decryption of the exchanged messages between client and server
     private AES aes;
+
+    // Specifies if the connection is encrypted or not
     private boolean isSecure = false;
 
 
@@ -34,10 +43,9 @@ public class DMAP {
     public String processInput(String input) throws DMAPErrorException {
         String output;
 
-        // When secured we need to decrypt the input
+        // When secured (encrypted) we need to decrypt the input first
         if (isSecure && input != null) {
             input = new String(aes.decrypt(Base64Util.getInstance().decode(input)));
-            System.out.println("Received as input from client: " + input);
         }
 
         if (input == null) {
@@ -52,30 +60,23 @@ public class DMAP {
             // Decrypt the challenge with the servers private key
             RSA rsa = new RSA(componentId, RSAMode.SERVER_DECRYPT_PRIVATE_KEY);
             String decryptedChallenge = new String(rsa.decrypt(Base64Util.getInstance().decode(input)));
-            System.out.println("Decrypted challenge: " + decryptedChallenge);
             ClientChallenge challenge = new ClientChallenge(decryptedChallenge);
 
             // Use the challenge to create the AES encryption and decryption objects
             this.aes = new AES(challenge.getSecret(), challenge.getIv());
 
             // Reply to the client with the received challenge, but now encrypted with the shared secret key (AES)
-            System.out.println("Challenge is: " + Base64Util.getInstance().encode(challenge.getChallenge()));
             output = Base64Util.getInstance().encode(aes.encrypt(String.format("ok %s", Base64Util.getInstance().encode(challenge.getChallenge())).getBytes()));
             state = DMAPStates.CLIENT_CHALLENGE_RECEIVED_AND_ANSWERED;
         } else if (state == DMAPStates.CLIENT_CHALLENGE_RECEIVED_AND_ANSWERED) {
             String response = new String(aes.decrypt(Base64Util.getInstance().decode(input)));
-            System.out.println("Response is: " + response);
             if (response.startsWith("ok")) {
                 isSecure = true;
-                System.out.println("DMAP - Client challenge was correct");
-            } else {
-                System.out.println("DMAP - Client challenge was incorrect");
             }
             output = null;
             state = DMAPStates.LOGGED_OUT;
         } else if (input.startsWith("login")) {
             if (state == DMAPStates.LOGGED_OUT) {
-                System.out.println("DMAP - Login - User is logged out");
                 String[] parts = input.split(" ");
                 if (parts.length != 3) {
                     throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error invalid input".getBytes())) : "error invalid input");
@@ -98,7 +99,6 @@ public class DMAP {
                 throw new DMAPErrorException(isSecure ? Base64Util.getInstance().encode(aes.encrypt(String.format("error already logged in with user %s", loggedInUser).getBytes())) : String.format("error already logged in with user %s", loggedInUser));
             }
         } else if (input.equals("list")) {
-            System.out.println("DMAP - List");
             if (state == DMAPStates.LOGGED_IN) {
                 StringBuilder list = new StringBuilder();
                 List<Message> messages = MessageStorageSingleton.getInstance().listMessages(loggedInUser);
@@ -107,7 +107,6 @@ public class DMAP {
                         list.append(m.getId()).append(" ").append(m.getSender()).append(" ").append(m.getSubject()).append("\n");
                     }
                     output = list + "ok";
-                    System.out.println(output);
                 } else output = "ok";
 
             } else {
@@ -172,8 +171,8 @@ public class DMAP {
             throw new DMAPTerminateConnectionException(isSecure ? Base64Util.getInstance().encode(aes.encrypt("error protocol error".getBytes())) : "error protocol error");
         }
 
+        // When secured (encrypted) we need to encrypt the output
         if (isSecure && output != null) {
-            System.out.println("Output is: " + output);
             output = Base64Util.getInstance().encode(aes.encrypt(output.getBytes()));
         }
         return output;
