@@ -66,6 +66,9 @@ public class MessageClient implements IMessageClient, Runnable {
     shell.out().println("Bye!");
   }
 
+  /**
+   * Obtains a list of all messages from the logged-in user's mailbox.
+   */
   @Override
   @Command
   public void inbox() {
@@ -78,8 +81,6 @@ public class MessageClient implements IMessageClient, Runnable {
         shell.out().println(messageList.get(0));
         return;
       }
-
-      messageList.forEach(System.out::println);
 
       // Process messages
       // Extract message ids from overview list
@@ -104,9 +105,14 @@ public class MessageClient implements IMessageClient, Runnable {
     } catch (IOException e) {
       shell.err().println(e.getMessage());
     }
-
   }
 
+  /**
+   * Creates an instance of Message from a message string.
+   *
+   * @param message the message string to be parsed.
+   * @return instance of Message.
+   */
   private static Message extractMessage(String message) {
     String[] lines = message.split("\n");
     Message msg = new Message();
@@ -124,6 +130,11 @@ public class MessageClient implements IMessageClient, Runnable {
     return msg;
   }
 
+  /**
+   * Deletes a message from the logged-in user's mailbox.
+   *
+   * @param id the message id to delete
+   */
   @Override
   @Command
   public void delete(String id) {
